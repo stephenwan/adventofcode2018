@@ -1,4 +1,7 @@
 __pycache__/
 .pytest_cache/
-
+.ipynb*
 *.egg-info
+
+.DS_Store
+.token*

@@ -4,13 +4,18 @@ setup(
     name="adventofcode",
     version="0.0.1",
     install_requires=[
-        'requests'
+        'requests',
+        'numpy',
+        'pandas',
+        'matplotlib'
     ],
     extras_require={"dev": [
         "pytest",
         "flake8",
         "black",
         "jedi",
-        "ipython"
+        "ipython",
+        'ipykernel',
+        'jupyter'
     ]}
 )
