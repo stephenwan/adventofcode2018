@@ -7,7 +7,8 @@ setup(
         'requests',
         'numpy',
         'pandas',
-        'matplotlib'
+        'matplotlib',
+        'recordclass'
     ],
     extras_require={"dev": [
         "pytest",
