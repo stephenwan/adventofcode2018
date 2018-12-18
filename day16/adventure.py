@@ -97,7 +97,7 @@ def parse_program_input(path):
     return result
 
 
-def run_ops(cases):
+def run_samples(cases):
     outcome = defaultdict(bool)
     for case in cases:
         op_code, op_input, rs_start, rs_end = case
@@ -106,38 +106,33 @@ def run_ops(cases):
             op(rs, *op_input)
             outcome[(i, op_code)] = rs == rs_end
 
-    guesses = defaultdict(set)
+    evidence = defaultdict(set)
     for (i, op_code), ok in outcome.items():
         if ok:
-            guesses[i].add(op_code)
-    return guesses
+            evidence[i].add(op_code)
+    return evidence
 
 
-def solve_op_codes(guesses):
-    idxes = sorted(guesses.keys(), key=lambda k: len(guesses[k]))
+def solve_op_codes(evidence):
+    op_idxes = sorted(evidence.keys(), key=lambda k: len(evidence[k]))
 
     def match_code(seen, matches):
-        nonlocal guesses
-        seen = set(seen)
+        nonlocal evidence
         progress = dict(matches)
-        used_op_codes = set()
-        for i in idxes:
+        for i in op_idxes:
             if i in matches:
                 continue
-            remaining = guesses[i].difference(seen)
+            remaining = evidence[i].difference(seen)
             if len(remaining) == 0:
                 return False, None
             for pick in remaining:
-                if pick in used_op_codes:
-                    next_seen = set(seen)
-                    next_seen.add(pick)
+                if pick in progress.values():
                     next_matches = dict(matches)
                     next_matches[i] = pick
-                    ok, return_matches = match_code(next_seen, next_matches)
-                    if ok:
-                        return ok, return_matches
+                    matched, return_matches = match_code({*seen, pick}, next_matches)
+                    if matched:
+                        return matched, return_matches
                 else:
-                    used_op_codes.add(pick)
                     progress[i] = pick
                     break
             if i not in progress:
@@ -165,18 +160,18 @@ def solve_part1(ops_path):
 
 def solve_part2(ops_path, program_path):
     cases = parse_ops_input(ops_path)
-    guesses = run_ops(cases)
-    solved, mapping = solve_op_codes(guesses)
+    evidence = run_samples(cases)
+    solved, mapping = solve_op_codes(evidence)
 
     if not solved:
         return None
 
     print(str(mapping))
 
-    lookup = dict((v, k) for k, v in mapping.items())
+    matched = dict((v, k) for k, v in mapping.items())
     program = parse_program_input(program_path)
     rs = [0, 0, 0, 0]
     for ops_code, ops_input in program:
-        ops[lookup[ops_code]](rs, *ops_input)
+        ops[matched[ops_code]](rs, *ops_input)
 
     return rs

@@ -23,18 +23,17 @@ class Unit:
         return self.faction()[0]
 
     def move(self, grid):
-        _, path = self.find_opponent_path(grid)
+        path = self.find_opponent_path(grid)
         if path is None or len(path) <= 2:
-            return False
+            return
         # print(f'{self.__repr__()} path {path}')
         grid.relocate(self, path[1])
-        return True
 
     def attack(self, grid, check_death=None):
-        _, oppo, _ = self.partition(Op.neighbours(self.p), grid)
-        if len(oppo) == 0:
-            return False
-        opponents = [grid.cells[u] for u in oppo]
+        opponents = self.in_range_opponents(grid)
+        if len(opponents) == 0:
+            return
+
         target = next(iter(sorted(opponents, key=lambda u: (u.hp, u.y, u.x))))
         print(f'{self} is attacking {target}')
         target.hp -= self.damage
@@ -43,52 +42,40 @@ class Unit:
             grid.remove(target)
             if check_death is not None:
                 check_death(target)
-        return True
 
     def find_opponent_path(self, grid):
-        front = {self.p: [self.p]}
-        seen = set(self.p)
-        distance = 0
-        while True:
-            distance += 1
-            oppo_paths = []
-            new_front = {}
-            new_seen = set()
-            for p, trajectory in front.items():
-                same, oppo, empty = self.partition([n for n in Op.neighbours(p)
-                                                    if n not in seen], grid)
-                if len(oppo) > 0:
-                    for n in oppo:
-                        oppo_paths.append(trajectory + [n])
-                        # TODO: this part has bug. Need same handling as 'empty'
-                elif len(empty) > 0:
-                    for n in empty:
-                        new_trajectory = trajectory + [n]
-                        if n not in new_front:
-                            new_front[n] = new_trajectory
-                        else:
-                            new_front[n] = min(new_trajectory, new_front[n])
-                        new_seen.add(n)
-            seen.update(new_seen)
-            if len(oppo_paths) > 0:
-                return distance, sorted(oppo_paths)[0]
-            if len(new_front) == 0:
-                return distance, None
-            front = new_front
+        from lib.alg import bfs
+        opponent, opponent_path = None, None
 
-    def partition(self, positions, grid):
-        partitions = defaultdict(list)
-        for p in positions:
-            cell = grid.cells[p]
-            if isinstance(cell, Wall):
-                pass
-            elif isinstance(cell, Empty):
-                partitions['empty'].append(p)
-            elif cell.faction() == self.faction():
-                partitions['same'].append(p)
-            else:
-                partitions['opposite'].append(p)
-        return partitions['same'], partitions['opposite'], partitions['empty']
+        def lookup_children(node):
+            return Op.neighbours(node)
+
+        def on_node_add(node, path):
+            node = grid.cells[node]
+            if isinstance(node, Empty):
+                return True
+            if isinstance(node, Unit) and node.faction() != self.faction():
+                return True
+            return False
+
+        def on_node_done(node, path):
+            node = grid.cells[node]
+            nonlocal opponent, opponent_path
+            if node != self and isinstance(node, Unit):
+                opponent, opponent_path = (node, path)
+                return False
+            return True
+
+        bfs(self.p, lookup_children=lookup_children,
+            on_node_add=on_node_add, on_node_done=on_node_done,
+            with_path=True)
+
+        return opponent_path
+
+    def in_range_opponents(self, grid):
+        return [unit for p in Op.neighbours(self.p)
+                for unit in [grid.cells[p]]
+                if isinstance(unit, Unit) and unit.faction() != self.faction()]
 
 
 class ElfDied(Exception):
@@ -150,7 +137,8 @@ class Op:
     South = (1, 0)
     West = (0, -1)
     North = (-1, 0)
-    Directions = [East, South, West, North]
+    # Directions = [East, South, West, North]
+    Directions = [North, West, East, South]
 
     @staticmethod
     def neighbour(current, direction):
@@ -189,24 +177,24 @@ def battle(grid, elves, goblins, check_death=None):
     print(f'Round: {tick}')
     print(grid)
     units = elves + goblins
-    while True:
-        tick += 1
-        print(f'\nRound: {tick}')
+    battle_ended = False
+    while not battle_ended:
         units = sorted(units, key=lambda unit: unit.p)
-        moved = False
-        attacked = False
         for unit in units:
             if not unit.alive:
                 continue
-            moved = unit.move(grid) or moved
-            attacked = unit.attack(grid, check_death) or attacked
-        print(f'moved {moved} attacked {attacked}')
+            if len(set(u.faction() for u in units if u.alive)) <= 1:
+                battle_ended = True
+                break
+            unit.move(grid)
+            unit.attack(grid, check_death)
+        else:
+            tick += 1
         units = [u for u in units if u.alive]
+        print(f'\nRound: {tick}')
         print(grid)
-        if len(set(u.faction() for u in units)) <= 1:
-            break
-    print(f'{tick - 1} * {sum([u.hp for u in units if u.alive])}')
-    return (tick - 1) * sum([u.hp for u in units if u.alive])
+    print(f'tick * {sum([u.hp for u in units if u.alive])}')
+    return tick * sum([u.hp for u in units if u.alive])
 
 
 def solve_part1(input_file):
