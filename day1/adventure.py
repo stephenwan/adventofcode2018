@@ -6,9 +6,9 @@ def solve_part2(input):
     size = len(input)
     subsums = {(0, 0): 0}
     for i in range(size):
-        subsums[(0, i+1)] = subsums[(0, i)] + input[i]
+        subsums[(0, i + 1)] = subsums[(0, i)] + input[i]
 
-    for j in range(1, size+1):
+    for j in range(1, size + 1):
         for i in range(j):
             subsums[(i, j)] = subsums[(0, j)] - subsums[(0, i)]
             if subsums[(i, j)] == 0:
