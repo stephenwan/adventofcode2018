@@ -1,6 +1,3 @@
-from collections import defaultdict
-
-
 def addr(rs, a, b, c):
     rs[c] = rs[a] + rs[b]
 
@@ -80,9 +77,6 @@ def from_file_data(file_path):
         instructions.append((op, list(map(int, params))))
 
     return ip, instructions
-
-
-registers = [0] * 6
 
 
 class Device:
