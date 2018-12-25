@@ -63,3 +63,20 @@ def bfs(start,
     if not with_path and not with_distance:
         return [o['node'] for o in output]
     return output
+
+
+def minmax(vs, with_idx=False):
+    min_v, max_v = (None, None)
+    idx_min, idx_max = (None, None)
+    for i, v in enumerate(vs):
+        if min_v is None or v < min_v:
+            min_v = v
+            idx_min = i
+        if max_v is None or v > max_v:
+            max_v = v
+            idx_max = i
+
+    if with_idx:
+        return (min_v, idx_min), (max_v, idx_max)
+    else:
+        return min_v, max_v

@@ -1,5 +1,6 @@
 import requests
 import os
+import time
 
 input_url = 'https://adventofcode.com/2018/day/{}/input'
 
@@ -27,3 +28,13 @@ def get_input_from_file(path, parser=None, break_lines=True):
         return [l if parser is None else parser(l) for l in input.split('\n')]
     else:
         return input if parser is None else parser(input)
+
+
+def timeit(method):
+    def timed(*args, **kw):
+        ts = time.time()
+        result = method(*args, **kw)
+        te = time.time()
+        print(f'{method.__name__}, {te - ts}')
+        return result
+    return timed
