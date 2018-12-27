@@ -8,7 +8,6 @@ setup(
         'numpy',
         'pandas',
         'matplotlib',
-        'recordclass'
     ],
     extras_require={"dev": [
         "pytest",
