@@ -189,7 +189,7 @@ def solve_part1(file_path):
 def solve_part2(file_path):
     lo_boost = 0
     hi_boost = 5000
-
+    last_result = None
     while lo_boost + 1 != hi_boost:
         try_boost = math.floor((lo_boost + hi_boost) / 2)
         print(f'try_boost {try_boost}')
@@ -198,9 +198,10 @@ def solve_part2(file_path):
         battle.run()
         if not battle.remains('Infection'):
             hi_boost = try_boost
+            last_result = sum(g.units for g in battle.unit_groups)
         else:
             lo_boost = try_boost
         print(f'{lo_boost} - {hi_boost}')
         print(battle)
 
-    return sum(g.units for g in battle.unit_groups)
+    return last_result
